@@ -6,6 +6,12 @@ const TransactionSchema = new mongoose.Schema({
         ref: 'User',
         required : true
     },
+    account:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Account',
+        required: true
+    },
+
     amount: {
         type: Number,
         required: true
@@ -18,10 +24,7 @@ const TransactionSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // createdAt:{
-    //     type: Date,
-    //     default:Date.now
-    // }
+   
     
 },{timestamps:true});
 

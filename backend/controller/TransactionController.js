@@ -1,124 +1,112 @@
 const Expense = require("../models/TransactionSchema");
-const User = require("../models/UserSchema");
+const Account = require("../models/AccountSchema");
 
-const addTransaction = async (req, res) => {
+//add transaction
+const addExpense = async (req, res) => {
   try {
-    const { amount, description, category, userId } = req.body;
-    // console.log(req.body);
-    if (!amount || !description || !category || !userId) {
-      return res.status(400).send({
-        success: false,
-        message: "All fields are required",
-      });
+    const { userId, accountId, amount, description, category } = req.body;
+    const account = await Account.findById(accountId);
+    if (!account) {
+      return res
+        .status(404)
+        .json({ success: true, message: "Account not found" });
     }
-
-
-
-    const newExpense = await Expense.create({
-      amount,
-      description,
-      category,
+    const transaction = await Expense.create({
       userId,
-    });
-
-    newExpense.save();
-
-
-
-    res.status(201).send({
-      success: true,
-      message: "Added succesfully",
-      newExpense,
-    });
-  } catch (error) {
-    console.log(error);
-    return res
-      .status(500)
-      .send({ message: "Internal Server Errror While Adding" });
-  }
-};
-
-//update expense controller
-const updateTransaction = async (req, res) => {
-  try {
-    const { amount, description, category } = req.body;
-
-    const id = req.params.id;
-
-    const expense = await Expense.findById(id);
-    
-    if (!expense) {
-      return res.status(404).send({
-        success: false,
-        message: "expense not found",
-      });
-    }
-    // if (expense.userId.toString() !== req.user.id) {
-    //   res.status(403);
-    //   throw new Error("User don't have permission to update");
-    // }
-
-    const updatedExpense = await Expense.findByIdAndUpdate(id, {
+      account: accountId,
       amount,
       description,
       category,
     });
 
-    updatedExpense.save();
-    res.status(200).json(updatedExpense).send({
-      success: true,
-      message: "Updated Successfully",
-    });
+    await transaction.save();
+
+    const updateAccount = await Account.findById(accountId);
+
+    updateAccount.transactions.push(transaction._id);
+
+    await updateAccount.save();
+
+    res.status(201).json({ success: true, data: transaction });
   } catch (error) {
-    return res.status(500).send({ message: "Internal Server Error" });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-//delete expense controller
-const deleteTransaction = async (req, res) => {
+//get all transaction
+const getAllExpense = async (req, res) => {
   try {
-    const id = req.params.id;
-    const expense = await Expense.findById(id);
-    if (!expense) {
-      return res.status(404).send({
-        success: false,
-        message: "expense not found",
-      });
-    }
-    const deleteExpense = await Expense.findByIdAndDelete(id);
-    deleteExpense.save();
-
-    return res.status(200).send({
-      success: true,
-      message: "Expense deleted successfully",
-    });
+    const { accountId } = req.params;
+    const transaction = await Expense.find({ account: accountId });
+    res.status(200).json({ success: true, data: transaction });
   } catch (error) {
-    return res.status(500).send({ message: "Internal Server Error" });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-//getAll expense controller
-const getAllTransaction = async (req, res) => {
+const updateExpense = async (req, res) => {
   try {
-   
-    const { userId } = req.params;
-    const expenses = await Expense.find(userId);
-    if (expenses.length === 0) {
-      return res.status(404).send({
-        success: false,
-        message: "No expenses found",
-      });
+    const { amount, description, category, transactionId } = req.body;
+    // const { transactionId } = req.params;
+    const updateTransaction = await Expense.findByIdAndUpdate(
+      transactionId,
+      { amount, description, category },
+      { new: true }
+    );
+    if (!updateTransaction) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Transaction not found" });
     }
-    return res.status(200).json(expenses);
+    res.status(200).json({ success: true, data: updateTransaction });
   } catch (error) {
-    return res.status(500).send({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const deleteExpense = async (req, res) => {
+  try {
+    const { accountId, transactionId } = req.body;
+
+    const account = await Account.findById(accountId);
+    if (!account) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Account not found" });
+    }
+
+    const expenseIndex = account.transactions.findIndex(
+      (transaction) => transaction._id.toString() === transactionId
+    );
+
+    if (expenseIndex === -1) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Expense not found" });
+    }
+
+    
+    // Remove the transaction from the account's transactions array
+    account.transactions.splice(expenseIndex, 1);
+    
+    // Save the updated account document
+    await account.save();
+    
+    await Expense.findByIdAndDelete(transactionId);
+
+    res.status(200).json({
+      success: true,
+      message: "Transaction deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const searchTransaction = async (req, res) => {
   try {
     const { userId, date } = req.params;
-    
+
     if (!userId || !date) {
       return res.status(400).json({
         success: false,
@@ -141,9 +129,9 @@ const searchTransaction = async (req, res) => {
 };
 
 module.exports = {
-  addTransaction,
-  updateTransaction,
-  deleteTransaction,
-  getAllTransaction,
+  addExpense,
+  getAllExpense,
+  updateExpense,
+  deleteExpense,
   searchTransaction,
 };

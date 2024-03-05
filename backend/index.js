@@ -11,7 +11,7 @@ app.use(express.json())
 Connection();
 
 app.use("/api/user",require("./router/UserRoutes"))
-app.use("/api/expense",require("./router/TransactionRoutes"))
+app.use("/api",require("./router/TransactionRoutes"))
 
 app.listen(port,()=>{
     console.log(`server running on: ${port}` );
