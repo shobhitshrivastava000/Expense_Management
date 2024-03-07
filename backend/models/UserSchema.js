@@ -14,10 +14,10 @@ const userSchema = mongoose.Schema({
         type:String,
         required:true
     },
-    account:[{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Account'
-    }]
+    // account:[{
+    //     type: mongoose.Schema.Types.ObjectId,
+    //     ref: 'Account'
+    // }]
 
 },{timestamps:true})
  module.exports = mongoose.model("User",userSchema)

@@ -14,8 +14,8 @@ const createNewAccount = async (req, res) => {
       name,
     });
     await newAccount.save();
-    user.account.push(newAccount._id);
-    await user.save();
+    // user.account.push(newAccount._id);
+    // await user.save();
 
     return res.status(201).json({ success: true, data: newAccount });
   } catch (error) {
